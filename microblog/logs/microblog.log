@@ -1,0 +1,67 @@
+2024-10-06 09:26:07,700 INFO: Microblog startup [in /home/kali/microblog/app/__init__.py:46]
+2024-10-06 09:26:13,333 ERROR: Exception on /remove_user/susan [POST] [in /home/kali/microblog/.venv/lib/python3.12/site-packages/flask/app.py:838]
+Traceback (most recent call last):
+  File "/home/kali/microblog/.venv/lib/python3.12/site-packages/flask/app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kali/microblog/.venv/lib/python3.12/site-packages/flask/app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kali/microblog/.venv/lib/python3.12/site-packages/flask/app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kali/microblog/.venv/lib/python3.12/site-packages/flask/app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kali/microblog/.venv/lib/python3.12/site-packages/flask_login/utils.py", line 290, in decorated_view
+    return current_app.ensure_sync(func)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kali/microblog/app/routes.py", line 157, in remove_user
+    db.session.commit()
+  File "/home/kali/microblog/.venv/lib/python3.12/site-packages/sqlalchemy/orm/scoping.py", line 597, in commit
+    return self._proxied.commit()
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kali/microblog/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 2028, in commit
+    trans.commit(_to_root=True)
+  File "<string>", line 2, in commit
+  File "/home/kali/microblog/.venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/home/kali/microblog/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 1313, in commit
+    self._prepare_impl()
+  File "<string>", line 2, in _prepare_impl
+  File "/home/kali/microblog/.venv/lib/python3.12/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/home/kali/microblog/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 1288, in _prepare_impl
+    self.session.flush()
+  File "/home/kali/microblog/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 4352, in flush
+    self._flush(objects)
+  File "/home/kali/microblog/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 4487, in _flush
+    with util.safe_reraise():
+  File "/home/kali/microblog/.venv/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/home/kali/microblog/.venv/lib/python3.12/site-packages/sqlalchemy/orm/session.py", line 4448, in _flush
+    flush_context.execute()
+  File "/home/kali/microblog/.venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py", line 442, in execute
+    postsort_actions = self._generate_actions()
+                       ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kali/microblog/.venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py", line 400, in _generate_actions
+    if action.execute(self):
+       ^^^^^^^^^^^^^^^^^^^^
+  File "/home/kali/microblog/.venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py", line 532, in execute
+    self.dependency_processor.presort_deletes(uow, delete_states)
+  File "/home/kali/microblog/.venv/lib/python3.12/site-packages/sqlalchemy/orm/dependency.py", line 1046, in presort_deletes
+    uowcommit.get_attribute_history(
+  File "/home/kali/microblog/.venv/lib/python3.12/site-packages/sqlalchemy/orm/unitofwork.py", line 283, in get_attribute_history
+    history = impl.get_history(
+              ^^^^^^^^^^^^^^^^^
+  File "/home/kali/microblog/.venv/lib/python3.12/site-packages/sqlalchemy/orm/writeonly.py", line 380, in get_history
+    c = self._get_collection_history(state, passive)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kali/microblog/.venv/lib/python3.12/site-packages/sqlalchemy/orm/writeonly.py", line 404, in _get_collection_history
+    return self.collection_history_cls(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/kali/microblog/.venv/lib/python3.12/site-packages/sqlalchemy/orm/writeonly.py", line 94, in __init__
+    raise exc.InvalidRequestError(
+sqlalchemy.exc.InvalidRequestError: Attribute User.following can't load the existing state from the database for this operation; full iteration is not permitted.  If this is a delete operation, configure passive_deletes=True on the User.following relationship in order to resolve this error.

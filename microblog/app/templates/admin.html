@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% for user in users %}
+    <div style="display: flex; align-items: center; margin-bottom: 10px;">
+        <span style="margin-right: 10px;">{{ user.username }}</span>
+        <form action="{{ url_for('remove_user', username=user.username) }}" method="post" style="margin: 0;">
+            {{ form.hidden_tag() }}
+            {{ form.submit(value="Remove") }}
+        </form>
+    </div>
+    Email: {{ user.email }}
+{% endfor %}
+{% endblock %}
