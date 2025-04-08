@@ -26,11 +26,11 @@ class User(UserMixin,db.Model):
     
     is_admin: so.Mapped[bool] = so.mapped_column(sa.Boolean, default=False)
     is_vip: so.Mapped[bool] = so.mapped_column(sa.Boolean, default=False, nullable=False)
-    vip_expiration_date: so.Mapped[Optional[datetime]] = so.mapped_column(default=lambda: datetime.now(timezone.utc), nullable=True)
+    vip_duration: so.Mapped[int] = so.mapped_column(default=0)
     
     posts: so.WriteOnlyMapped['Post'] = so.relationship(back_populates='author', passive_deletes=True)
     following: so.WriteOnlyMapped['User'] = so.relationship(
-        secondary=followers, 
+        secondary=followers,
         primaryjoin=(followers.c.follower_id == id),
         secondaryjoin=(followers.c.followed_id == id),
         back_populates="followers",
@@ -127,13 +127,18 @@ class Voucher(db.Model):
     def redeem(self, user: User):
         self.user = user
         user.is_vip = True
-        user.vip_expiration_date = user.vip_expiration_date + timedelta(days=30)
+        user.vip_duration = user.vip_duration + 30
         self.redeemed = True
         sleep(1)
         db.session.commit()
 
     def __repr__(self):
         return f'<Voucher {self.code}>'
+
+class Basket(db.Model):
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    user_id: so.Mapped[Optional[int]] = so.mapped_column(sa.ForeignKey(User.id), nullable=True)
+    duration: so.Mapped[int] = so.mapped_column()
 
 @login.user_loader
 def load_user(id):

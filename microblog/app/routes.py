@@ -5,7 +5,7 @@ from flask_login import current_user, login_user, logout_user, login_required
 from urllib.parse import urlsplit
 import sqlalchemy as sa
 from app import db
-from app.models import User, Post, followers, Voucher
+from app.models import User, Post, followers, Voucher, Basket
 from datetime import datetime, timezone
 from app.email import send_password_reset_email
 import re
@@ -375,6 +375,19 @@ def redeem_voucher():
                 flash(str(e), 'danger')
             return render_template("redeem.html", form=form)
     return render_template("redeem.html", form=form)
+
+@app.route('/add_to_basket', methods=['GET'])
+@login_required
+def add_to_basket():
+    time = request.args.get('duration', type=int)
+    basket = db.session.scalar(sa.select(Basket).where(Basket.user_id == current_user.user_id))
+    basket.duration += time
+    db.session.commit
+    flash('Item added to basket!')
+
+@app.route('/confirm_order', methods=["POST"])
+def confirm_order():
+    user = db.session.scalar(sa.select(User).where(User.user_id == current_user.user_id))
 
 @app.route('/greet', methods=['GET', 'POST'])
 def greet():
