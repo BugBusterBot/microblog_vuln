@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+  <h1>Choose Your Subscription</h1>
+  <div class="row">
+    <!-- Subscription 1 -->
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title">Basic Plan</h5>
+        </div>
+        <div class="card-body">
+          <p class="card-text">Access to basic features.</p>
+          <h4>$5 / month</h4>
+          <a href="{{ url_for('add_to_basket', q='Basic') }}" class="btn btn-primary">Add to Basket</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subscription 2 -->
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title">Premium Plan</h5>
+        </div>
+        <div class="card-body">
+          <p class="card-text">Access to all features with additional perks.</p>
+          <h4>$15 / month</h4>
+          <a href="{{ url_for('add_to_basket', q='Premium') }}" class="btn btn-primary">Add to Basket</a>
+        </div>
+      </div>
+    </div>
+{% endblock %}
