@@ -20,6 +20,10 @@ def before_request():
             vip_expiration = current_user.vip_expiration_date.replace(tzinfo=timezone.utc)  
             if vip_expiration < datetime.now(timezone.utc):
                 current_user.is_vip = False
+        if not current_user.basket:
+            basket = Basket(user_id=current_user.id)
+            db.session.add(basket)
+            db.session.commit()
         db.session.commit()
 
 @app.route('/', methods=["GET", "POST"])
@@ -379,15 +383,32 @@ def redeem_voucher():
 @app.route('/add_to_basket', methods=['GET'])
 @login_required
 def add_to_basket():
-    time = request.args.get('duration', type=int)
-    basket = db.session.scalar(sa.select(Basket).where(Basket.user_id == current_user.user_id))
-    basket.duration += time
-    db.session.commit
+    category = request.args.get('q', type=str)
+    if category not in ["Basic", "Premium"]:
+        flash("Invalid item!")
+        return redirect(url_for('choose_subscription'))
+    basket = db.session.scalar(sa.select(Basket).where(Basket.user_id == current_user.id))
+    basket.item = category
+    db.session.commit()
     flash('Item added to basket!')
+    return redirect(url_for('choose_subscription'))
 
-@app.route('/confirm_order', methods=["POST"])
+@app.route('/basket', methods=['GET'])
+@login_required
+def basket():
+    basket = db.session.scalar(sa.select(Basket).where(Basket.user_id == current_user.id))
+    return render_template('basket.html', basket=basket)
+
+@app.route('/choose_subscription', methods=['GET'])
+@login_required
+def choose_subscription():
+    return render_template("subscription.html")
+
+@app.route('/confirm_order', methods=["GET"])
 def confirm_order():
-    user = db.session.scalar(sa.select(User).where(User.user_id == current_user.user_id))
+    basket = db.session.scalar(sa.select(Basket).where(Basket.user_id == current_user.id))
+    flash(f'You purchased {basket.item} subscription!')
+    return redirect(url_for("basket"))
 
 @app.route('/greet', methods=['GET', 'POST'])
 def greet():

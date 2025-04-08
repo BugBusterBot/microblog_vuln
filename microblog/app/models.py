@@ -29,6 +29,7 @@ class User(UserMixin,db.Model):
     vip_duration: so.Mapped[int] = so.mapped_column(default=0)
     
     posts: so.WriteOnlyMapped['Post'] = so.relationship(back_populates='author', passive_deletes=True)
+    basket: so.Mapped['Basket'] = so.relationship(back_populates='author')
     following: so.WriteOnlyMapped['User'] = so.relationship(
         secondary=followers,
         primaryjoin=(followers.c.follower_id == id),
@@ -36,7 +37,7 @@ class User(UserMixin,db.Model):
         back_populates="followers",
         passive_deletes=True
     )
-    followers: so.WriteOnlyMapped["User"] = so.relationship(
+    followers: so.WriteOnlyMapped['User'] = so.relationship(
         secondary = followers, 
         primaryjoin=(followers.c.followed_id == id),
         secondaryjoin = (followers.c.follower_id == id),
@@ -138,7 +139,9 @@ class Voucher(db.Model):
 class Basket(db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
     user_id: so.Mapped[Optional[int]] = so.mapped_column(sa.ForeignKey(User.id), nullable=True)
-    duration: so.Mapped[int] = so.mapped_column()
+    item: so.Mapped[Optional[str]] = so.mapped_column(nullable=True)
+
+    author: so.Mapped[User] = so.relationship(back_populates='basket')
 
 @login.user_loader
 def load_user(id):

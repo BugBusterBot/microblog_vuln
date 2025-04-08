@@ -32,6 +32,9 @@
             <li class="nav-item">
               <a class="nav-link" aria-current="page" href="{{ url_for('explore') }}">Explore</a>
             </li>
+            <li class="nav-item">
+              <a class="nav-link" aria-current="page" href="{{ url_for('choose_subscription') }}">Subscription</a>
+            </li>
           </ul>
           <ul class="navbar-nav mb-2 mb-lg-0">
             {% if current_user.is_anonymous %}
