@@ -8,6 +8,7 @@ from app import db
 from app.models import User, Post, followers, Voucher, Basket
 from datetime import datetime, timezone
 from app.email import send_password_reset_email
+from time import sleep
 import re
 import requests
 from lxml import etree
@@ -407,8 +408,11 @@ def choose_subscription():
 @app.route('/confirm_order', methods=["GET"])
 def confirm_order():
     basket = db.session.scalar(sa.select(Basket).where(Basket.user_id == current_user.id))
-    flash(f'You purchased {basket.item} subscription!')
-    return redirect(url_for("basket"))
+    if basket.item == "Premium":
+        return render_template("confirm_order.html", message="Transaction blocked!")
+    sleep(10)
+    db.session.refresh(basket)
+    return render_template("confirm_order.html", item=basket.item)
 
 @app.route('/greet', methods=['GET', 'POST'])
 def greet():
