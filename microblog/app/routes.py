@@ -1,26 +1,22 @@
 from app import app
 from app.forms import LoginForm, RegistrationForm, EditProfileForm, EmptyForm, PostForm, ResetPasswordRequestForm, ResetPasswordForm, EditPostForm
-from flask import render_template, flash, redirect, url_for, request, abort, send_file, render_template_string
+from flask import render_template, flash, redirect, url_for, request, abort, send_file, render_template_string, make_response
 from flask_login import current_user, login_user, logout_user, login_required
 from urllib.parse import urlsplit
 import sqlalchemy as sa
+from sqlalchemy.orm.exc import StaleDataError
 from app import db
 from app.models import User, Post, followers, Voucher, Basket
 from datetime import datetime, timezone
 from app.email import send_password_reset_email
 from time import sleep
-import re
-import requests
+import re, requests, pickle, base64, html
 from lxml import etree
 
 @app.before_request
 def before_request():
     if current_user.is_authenticated:
         current_user.last_seen = datetime.now(timezone.utc)
-        if current_user.is_vip:
-            vip_expiration = current_user.vip_expiration_date.replace(tzinfo=timezone.utc)  
-            if vip_expiration < datetime.now(timezone.utc):
-                current_user.is_vip = False
         if not current_user.basket:
             basket = Basket(user_id=current_user.id)
             db.session.add(basket)
@@ -60,7 +56,12 @@ def login():
         next_page = request.args.get("next")
         if not next_page or urlsplit(next_page).netloc != '':
             next_page = url_for('index')
-        return redirect(url_for("index"))
+        pickled_user = pickle.dumps(user)
+        encoded_user = base64.b64encode(pickled_user).decode('utf-8')
+        response = make_response(redirect(next_page))
+        response.set_cookie('user', encoded_user, httponly=True)
+
+        return response
     return render_template("login.html", title="Sign In", form=form)
 
 @app.route("/logout")
@@ -358,41 +359,36 @@ def redeem_voucher():
     form = EditPostForm()
     if form.validate_on_submit():
         voucher_code = form.body.data
-        if not voucher_code:
-            flash('Voucher code is required!', 'danger')
+        try:
+            with db.session.begin():
+                voucher = db.session.scalar(
+                    sa.select(Voucher)
+                    .where(Voucher.code == voucher_code)
+                )
 
-        # Look up the voucher by its code
-        voucher = db.session.scalar(sa.select(Voucher).where(Voucher.code == voucher_code))
+                if not voucher or voucher.redeemed:
+                    flash("Voucher is invalid or already redeemed.")
+                else:
+                    voucher.redeemed = True
+                    voucher.user_id = current_user.id
+                    db.session.flush()
 
-        if not voucher:
-            flash('Voucher code not found!', 'warning')
-            return redirect(url_for('index'))
+                    current_user.is_vip = True
+                    current_user.vip_duration += 1
+                    db.session.add(current_user)
 
-        # Check if the voucher is already redeemed
-        if voucher.redeemed:
-            flash('This voucher has already been redeemed!', 'danger')
-        else: 
-            # Redeem the voucher: Update the voucher and user VIP status
-            try:
-                voucher.redeem(current_user)
-                flash(f'Voucher {voucher_code} redeemed successfully! You now have 1 month of VIP access.', 'success')
-            except ValueError as e:
-                flash(str(e), 'danger')
-            return render_template("redeem.html", form=form)
+                    flash(f'Voucher {voucher_code} redeemed successfully!')
+
+        except StaleDataError:
+            db.session.rollback()
+            flash("This voucher was already redeemed. Please try another.")
+        except Exception as e:
+            db.session.rollback()
+            flash("An unexpected error occurred.")
+
+        return render_template("redeem.html", form=form)
+
     return render_template("redeem.html", form=form)
-
-@app.route('/add_to_basket', methods=['GET'])
-@login_required
-def add_to_basket():
-    category = request.args.get('q', type=str)
-    if category not in ["Basic", "Premium"]:
-        flash("Invalid item!")
-        return redirect(url_for('choose_subscription'))
-    basket = db.session.scalar(sa.select(Basket).where(Basket.user_id == current_user.id))
-    basket.item = category
-    db.session.commit()
-    flash('Item added to basket!')
-    return redirect(url_for('choose_subscription'))
 
 @app.route('/basket', methods=['GET'])
 @login_required
@@ -405,13 +401,37 @@ def basket():
 def choose_subscription():
     return render_template("subscription.html")
 
+@app.route('/add_to_basket', methods=['GET'])
+@login_required
+def add_to_basket():
+    category = request.args.get('q', type=str)
+    if category not in ["Basic", "Premium"]:
+        flash("Invalid item!")
+        return redirect(url_for('choose_subscription'))
+    try:
+        with db.session.begin():
+            basket = db.session.scalar(sa.select(Basket).where(Basket.user_id == current_user.id))
+            basket.item = category
+            db.session.flush()
+            flash('Item added to basket!')
+    except StaleDataError:
+        db.session.rollback()
+        flash("Another update occurred — try again.")
+    return redirect(url_for('choose_subscription'))
+
 @app.route('/confirm_order', methods=["GET"])
 def confirm_order():
-    basket = db.session.scalar(sa.select(Basket).where(Basket.user_id == current_user.id))
-    if basket.item == "Premium":
-        return render_template("confirm_order.html", message="Transaction blocked!")
-    sleep(10)
-    db.session.refresh(basket)
+    try:
+        with db.session.begin():
+            basket = db.session.scalar(sa.select(Basket).where(Basket.user_id == current_user.id))
+            if basket.item == "Premium":
+                return render_template("confirm_order.html", message="Transaction blocked!")
+            sleep(5)
+            basket.item = basket.item
+            db.session.flush()
+    except StaleDataError:
+        db.session.rollback()
+        return render_template("confirm_order.html", message="Order was modified by another process. Please try again.")
     return render_template("confirm_order.html", item=basket.item)
 
 @app.route('/greet', methods=['GET', 'POST'])
@@ -426,3 +446,18 @@ def greet():
             <input type="submit" value="Greet">
         </form>
     '''
+
+@app.route('/deserialize')
+@login_required
+def deserialize():
+    data = request.cookies.get('user')
+    if data:
+        decoded = base64.b64decode(data)
+        try:
+            deserialized = pickle.loads(decoded)
+
+            return f'Deserialized Data: {html.escape(str(deserialized))}'
+        except Exception as e:
+            return f'Error deserializing data: {e}'
+    else:
+        return 'No data parameter provided.'

@@ -118,12 +118,15 @@ class Post(db.Model):
 
 class Voucher(db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
-    code: so.Mapped[str] = so.mapped_column(sa.String(64), unique=True)  # unique voucher code
-    redeemed: so.Mapped[bool] = so.mapped_column(sa.Boolean, default=False)  # whether the voucher has been redeemed
-    user_id: so.Mapped[Optional[int]] = so.mapped_column(sa.ForeignKey(User.id), nullable=True)  # the user who redeemed the voucher
-
-    # Relationship to the User who redeemed the voucher
+    code: so.Mapped[str] = so.mapped_column(sa.String(64), unique=True)
+    redeemed: so.Mapped[bool] = so.mapped_column(sa.Boolean, default=False)
+    user_id: so.Mapped[Optional[int]] = so.mapped_column(sa.ForeignKey(User.id), nullable=True)
     user: so.Mapped[Optional[User]] = so.relationship('User', backref='vouchers', passive_deletes=True)
+    version_id: so.Mapped[int] = so.mapped_column(sa.Integer, nullable=False, default=1)
+
+    __mapper_args__ = {
+        "version_id_col": version_id
+    }
 
     def redeem(self, user: User):
         self.user = user
@@ -139,9 +142,13 @@ class Voucher(db.Model):
 class Basket(db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
     user_id: so.Mapped[Optional[int]] = so.mapped_column(sa.ForeignKey(User.id), nullable=True)
-    item: so.Mapped[Optional[str]] = so.mapped_column(nullable=True)
-
+    item: so.Mapped[Optional[str]] = so.mapped_column(sa.String(64), nullable=True)
     author: so.Mapped[User] = so.relationship(back_populates='basket')
+    version_id: so.Mapped[int] = so.mapped_column(sa.Integer, nullable=False, default=1)
+
+    __mapper_args__ = {
+        "version_id_col": version_id
+    }
 
 @login.user_loader
 def load_user(id):
