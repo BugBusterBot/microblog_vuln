@@ -5,7 +5,6 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_mail import Mail
 from flask_moment import Moment
-from sqlalchemy import text
 import logging
 from logging.handlers import SMTPHandler, RotatingFileHandler
 import os
