@@ -259,7 +259,7 @@ def edit_post(id):
 @login_required
 def change_email():
     q = request.args.get("q")
-    if re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', q):
+    if q and re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', q):
         current_user.email = q
         db.session.commit()
         return redirect(url_for('user', username=current_user.username))
