@@ -143,7 +143,9 @@ class Voucher(db.Model):
         return f'<Voucher {self.code}>'
 
 class Basket(db.Model):
-    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    id: so.Mapped[int] = so.mapped_column(sa.Integer,
+        Sequence("basket_id_seq", start=1, increment=1),
+        primary_key=True)
     user_id: so.Mapped[Optional[int]] = so.mapped_column(sa.ForeignKey(User.id), nullable=True)
     item: so.Mapped[Optional[str]] = so.mapped_column(sa.String(64), nullable=True)
     author: so.Mapped[User] = so.relationship(back_populates='basket')
