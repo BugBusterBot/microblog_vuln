@@ -109,7 +109,9 @@ class User(UserMixin,db.Model):
         return '<User {}>'.format(self.username)
 
 class Post(db.Model):
-    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    id: so.Mapped[int] = so.mapped_column(sa.Integer,
+        Sequence("post_id_seq", start=1, increment=1),
+        primary_key=True)
     body: so.Mapped[str] = so.mapped_column(sa.String(140))
     timestamp: so.Mapped[datetime] = so.mapped_column(index=True, default=lambda: datetime.now(timezone.utc))
     user_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(User.id), index=True)
@@ -120,7 +122,9 @@ class Post(db.Model):
         return '<Post {}>'.format(self.body)
 
 class Voucher(db.Model):
-    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    id: so.Mapped[int] = so.mapped_column(sa.Integer,
+        Sequence("voucher_id_seq", start=1, increment=1),
+        primary_key=True)
     code: so.Mapped[str] = so.mapped_column(sa.String(64), unique=True)
     redeemed: so.Mapped[bool] = so.mapped_column(sa.Boolean, default=False)
     user_id: so.Mapped[Optional[int]] = so.mapped_column(sa.ForeignKey(User.id), nullable=True)
