@@ -1,3 +1,4 @@
+Oracle Linux (recommended OS)
 ```bash
 git clone https://github.com/BugBusterBot/microblog_vuln.git
 cd microblog_vuln/microblog
